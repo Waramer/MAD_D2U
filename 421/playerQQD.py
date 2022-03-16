@@ -8,6 +8,7 @@ Group: DELEZENNE Quentin
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import json
 
 # MAIN: 
 
@@ -22,17 +23,37 @@ def main() :
     numberOfEpisodes = 200
     rewards= gameEngine.start( player, numberOfGames )
 
+    # Import Q values from JSON
+    try:
+        print("Trying to import Q Values from 'data.json' ... ")
+        with open('data.json') as json_file:
+            player.qvalues = json.load(json_file)
+        print("Import succeeded")
+    except:
+        print("'data.json' file doesn't exist ")
+
+    # Learning
     for episod in range(1,numberOfEpisodes+1) :
         rewards= gameEngine.start( player, numberOfGames )
         print("Episode "+str(episod)+", average: "+str( sum(rewards)/len(rewards)))
         averages.append(sum(rewards)/len(rewards))
 
-    plt.plot(np.linspace(1,numberOfEpisodes,numberOfEpisodes),averages)
-    plt.show()
-
+    # testing
     print("I want to win !")
     player.epsilon = 0.0
-    rewards= gameEngine.start( player,10000)
+    rewardsF = gameEngine.start( player,10000)
+    averageF = sum(rewardsF)/len(rewardsF)
+    print("Average: "+str(averageF))
+
+    # Export in Q Values in JSON
+    with open('data.json', 'w') as fp:
+        json.dump(player.qvalues, fp,  indent=4)
+    print("Q Values exported in JSON")
+
+    # Affichage
+    plt.plot(np.linspace(1,numberOfEpisodes,numberOfEpisodes),averages,color='b')
+    plt.scatter([numberOfEpisodes+1],[averageF],color='r')
+    plt.show()
 
     # Print average Q Values for each state :
     # print( player.qvalues['9-1-1-1'] )
@@ -54,13 +75,13 @@ for a1 in ['keep', 'roll']:
 # Q LEARNER: 
 
 class PlayerQ() :
-    def __init__(self):
+    def __init__(self,alpha=0.1,epsilon=0.1,gamma=1.0):
         self.results= []
         # Q Learning code and constants
         self.qvalues= {}
-        self.alpha = 0.1
-        self.epsilon = 0.1
-        self.gamma = 1.0
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.gamma = gamma
     
     # State Machine :
     def stateStr(self):
